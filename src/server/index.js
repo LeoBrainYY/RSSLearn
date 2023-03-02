@@ -1,8 +1,8 @@
 /*
  * @Author: xiaoxinYy 3037686283@qq.com
  * @Date: 2023-02-12 22:17:38
- * @LastEditors: xiaoxinYy 3037686283@qq.com
- * @LastEditTime: 2023-02-16 19:51:49
+ * @LastEditors: Crayon 3037686283@qq.com
+ * @LastEditTime: 2023-03-02 09:29:39
  * @FilePath: \SSR\01_node-server\src\server\index.js
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -12,11 +12,31 @@ import { renderToString } from '@vue/server-renderer'
 let express = require('express')
 let server = express()
 
+import createRouter from '../router'
+
+// 内存路由 -> node用
+import { createMemoryHistory } from 'vue-router'
+
+import { createPinia } from 'pinia'
+
 // 部署打包资源文件
 server.use(express.static('build'))
 
-server.get('/', async (req, res) => {
+// / or /about
+server.get('/*', async (req, res) => {
   let app = createApp()
+
+  // 安装路由插件
+  let router = createRouter(createMemoryHistory())
+  app.use(router)
+  // 异步执行跳转 需等待跳转完成
+  await router.push(req.url || '/')
+  await router.isReady() // 等待路由加载完成 再渲染
+
+  // 安装pinia
+  let pinia = createPinia()
+  app.use(pinia)
+
   let appStringHtml = await renderToString(app)
   res.send(
     `
